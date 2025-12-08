@@ -48,9 +48,9 @@ class Settings(BaseSettings):
     announcement_content: str = ""
     announcement_read_seconds: int = 5  # 阅读多少秒才能关闭
     
-    # Google OAuth (从环境变量获取)
-    google_client_id: str = ""
-    google_client_secret: str = ""
+    # Google OAuth (Gemini CLI 官方凭据)
+    google_client_id: str = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
+    google_client_secret: str = "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"
     
     class Config:
         env_file = ".env"

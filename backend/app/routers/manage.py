@@ -106,8 +106,8 @@ async def export_credentials(
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
         for cred in credentials:
             cred_data = {
-                "client_id": settings.google_client_id,
-                "client_secret": settings.google_client_secret,
+                "client_id": "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
+                "client_secret": "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",
                 "refresh_token": decrypt_credential(cred.refresh_token) if cred.refresh_token else "",
                 "token": decrypt_credential(cred.api_key) if cred.api_key else "",
                 "project_id": cred.project_id or "",

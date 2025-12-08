@@ -108,6 +108,11 @@ DEFAULT_DAILY_QUOTA=100
 
 # 注册开关
 ALLOW_REGISTRATION=true
+
+# Google OAuth（使用 Gemini CLI 官方凭据）
+# 来源: https://github.com/anthropics/gemini-cli
+GOOGLE_CLIENT_ID=681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
 ```
 
 ### Discord Bot 配置
