@@ -535,60 +535,184 @@ docker run -d --env-file .env catiecli-bot
 
 ## 🔄 更新指南
 
-### 拉取最新代码
+当有新版本发布时，按以下步骤更新你的部署。
+
+### 第一步：拉取最新代码
+
+SSH 连接到你的服务器，进入项目目录：
 
 ```bash
-cd /opt/CatieCli  # 你的安装目录
+cd /opt/CatieCli  # 替换为你的实际安装目录
+```
+
+拉取最新代码：
+
+```bash
 git pull
 ```
 
-如果有冲突，强制更新：
+**如果提示冲突或失败**，使用强制更新：
 
 ```bash
 git fetch --all
 git reset --hard origin/main
 ```
 
-### 重启服务
+> ⚠️ 强制更新会覆盖本地修改，但不会影响 `data/` 目录的数据库。
 
-**Docker Compose 方式：**
+### 第二步：重启服务
+
+根据你的部署方式选择：
+
+**方式一：Docker Compose（推荐）**
 
 ```bash
+# 停止旧容器
+docker-compose down
+
+# 重新构建并启动（会自动使用新代码）
+docker-compose up -d --build
+```
+
+**方式二：1Panel 运行环境**
+
+1. 打开 1Panel 管理面板
+2. 进入「网站」→「运行环境」
+3. 找到你的应用（如 `catiecli`）
+4. 点击右侧的「重启」按钮
+5. 等待状态变为「运行中」
+
+**方式三：直接运行（开发模式）**
+
+```bash
+# 如果有正在运行的进程，先停止
+pkill -f "uvicorn app.main:app"
+
+# 重新启动
+cd backend
+pip install -r requirements.txt  # 如果有新依赖
+python run.py
+```
+
+### 第三步：清除浏览器缓存
+
+**这一步很重要！** 更新后必须清除浏览器缓存，否则可能加载旧的 JS 文件导致报错。
+
+| 系统    | 快捷键                            |
+| ------- | --------------------------------- |
+| Windows | `Ctrl + Shift + R` 或 `Ctrl + F5` |
+| Mac     | `Cmd + Shift + R`                 |
+| Linux   | `Ctrl + Shift + R`                |
+
+**或者手动清除：**
+
+1. 按 `F12` 打开开发者工具
+2. 右键点击浏览器的刷新按钮
+3. 选择「清空缓存并硬性重新加载」
+
+### 一键更新脚本
+
+你也可以创建一个更新脚本 `/opt/CatieCli/update.sh`：
+
+```bash
+#!/bin/bash
+cd /opt/CatieCli
+echo "📥 拉取最新代码..."
+git pull
+echo "🔄 重启服务..."
+docker-compose down
+docker-compose up -d --build
+echo "✅ 更新完成！请清除浏览器缓存后刷新页面"
+```
+
+赋予执行权限后即可使用：
+
+```bash
+chmod +x /opt/CatieCli/update.sh
+/opt/CatieCli/update.sh
+```
+
+---
+
+## ❓ 常见问题
+
+### Q: 页面报错 `xxx is not defined` 或页面空白
+
+**原因**: 浏览器缓存了旧的 JavaScript 文件，与新版本不兼容。
+
+**解决方法**:
+
+1. 按 `Ctrl + Shift + R`（Mac 用 `Cmd + Shift + R`）强制刷新
+2. 如果还不行，打开浏览器设置清除所有缓存
+3. 或者使用无痕/隐私模式访问测试
+
+### Q: 更新后页面没有变化
+
+**排查步骤**:
+
+1. **确认代码已更新**：
+
+   ```bash
+   cd /opt/CatieCli
+   git log -1  # 查看最新提交
+   ```
+
+2. **确认服务已重启**：
+
+   ```bash
+   docker-compose ps  # 查看容器状态
+   ```
+
+3. **确认浏览器缓存已清除**：按 `Ctrl + Shift + R`
+
+### Q: 数据库数据会丢失吗？
+
+**不会！** 数据库文件存储在 `data/` 目录，该目录已被 `.gitignore` 忽略，更新代码不会影响你的数据。
+
+包括以下数据都会保留：
+
+- 用户账号
+- API Key
+- 凭证信息
+- 使用记录
+- 系统设置
+
+### Q: OAuth 获取凭证时提示 `redirect_uri_mismatch`
+
+**原因**: Google OAuth 的回调地址必须是 `http://localhost:8080`
+
+**解决方法**: 这是正常的！按照 OAuth 页面的教程操作，复制完整的回调 URL 粘贴到系统中即可。
+
+### Q: 凭证显示"无效"或"已禁用"
+
+**可能原因**:
+
+1. Google 账号被封禁
+2. Refresh Token 已过期
+3. 账号未开通 Gemini API
+
+**解决方法**: 删除该凭证，重新通过 OAuth 授权获取新凭证。
+
+### Q: 如何备份数据？
+
+只需要备份 `data/` 目录即可：
+
+```bash
+cp -r /opt/CatieCli/data /backup/catiecli-data-$(date +%Y%m%d)
+```
+
+### Q: 如何完全重置系统？
+
+```bash
+cd /opt/CatieCli
+rm -rf data/  # 删除所有数据（谨慎操作！）
 docker-compose down
 docker-compose up -d --build
 ```
 
-**1Panel 方式：**
+重启后会自动创建新的数据库和默认管理员账号。
 
-进入 1Panel → 网站 → 运行环境 → 找到你的应用 → 点击「重启」
-
-### 清除浏览器缓存
-
-更新后如果页面没变化或报错，需要清除浏览器缓存：
-
-- **Windows/Linux**: `Ctrl + Shift + R` 或 `Ctrl + F5`
-- **Mac**: `Cmd + Shift + R`
-- **或者**: 打开开发者工具（F12）→ 右键刷新按钮 → 「清空缓存并硬性重新加载」
-
-## ❓ 常见问题
-
-### Q: 页面报错 `xxx is not defined`
-
-**原因**: 浏览器加载了旧的缓存文件
-
-**解决**: 清除浏览器缓存后刷新（`Ctrl+Shift+R`）
-
-### Q: 更新后没有变化
-
-**解决**:
-
-1. 确认 `git pull` 成功
-2. 重启服务
-3. 清除浏览器缓存
-
-### Q: 数据库数据会丢失吗？
-
-**不会**。数据库文件在 `data/` 目录，更新代码不影响数据。
+---
 
 ## 📄 开源协议
 
@@ -596,4 +720,4 @@ MIT License
 
 ## 🙏 致谢
 
-感谢所有贡献凭证的用户！
+感谢所有贡献凭证的用户！！
