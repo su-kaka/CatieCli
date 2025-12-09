@@ -448,6 +448,7 @@ export default function Admin() {
                       <tr>
                         <th>ID</th>
                         <th>名称</th>
+                        <th>等级</th>
                         <th>API Key</th>
                         <th>请求数</th>
                         <th>失败数</th>
@@ -461,6 +462,13 @@ export default function Admin() {
                         <tr key={c.id}>
                           <td className="text-gray-400">{c.id}</td>
                           <td>{c.name}</td>
+                          <td>
+                            {c.model_tier === '3' ? (
+                              <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded text-xs">⭐ 3.0</span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-gray-600/50 text-gray-400 rounded text-xs">2.5</span>
+                            )}
+                          </td>
                           <td className="font-mono text-sm text-gray-400">{c.api_key}</td>
                           <td>{c.total_requests}</td>
                           <td className={c.failed_requests > 0 ? 'text-red-400' : ''}>
