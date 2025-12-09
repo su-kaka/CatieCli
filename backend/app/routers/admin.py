@@ -44,10 +44,11 @@ async def list_users(
         )
         today_usage = usage_result.scalar() or 0
         
-        # 获取用户凭证数量
+        # 获取用户活跃凭证数量
         cred_result = await db.execute(
             select(func.count(Credential.id))
             .where(Credential.user_id == u.id)
+            .where(Credential.is_active == True)
         )
         credential_count = cred_result.scalar() or 0
         
