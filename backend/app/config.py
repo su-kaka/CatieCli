@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     
     # 服务
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 5001
     
     # Gemini
     gemini_api_base: str = "https://generativelanguage.googleapis.com"
