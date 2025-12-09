@@ -283,33 +283,39 @@ python bot.py
 
 ---
 
-### 方式三：Docker 部署
-
-#### 后端
+### 方式三：Docker Compose 部署（最简单）
 
 ```bash
-cd backend
-docker build -t catiecli .
-docker run -d \
-  -p 5001:5001 \
-  -v ./data:/app/data \
-  -e ADMIN_USERNAME=admin \
-  -e ADMIN_PASSWORD=your_password \
-  -e SECRET_KEY=random_string \
-  catiecli
+# 1. 克隆代码
+git clone https://github.com/mzrodyu/CatieCli.git
+cd CatieCli
+
+# 2. 修改配置（可选）
+# 编辑 docker-compose.yml 修改 ADMIN_PASSWORD 和 SECRET_KEY
+
+# 3. 一键启动
+docker-compose up -d
+
+# 4. 查看日志
+docker-compose logs -f
 ```
 
-#### Discord Bot
+访问 `http://你的IP:5001` 即可
 
-```bash
-cd discord-bot
-docker build -t catiecli-bot .
-docker run -d \
-  -e DISCORD_TOKEN=your_token \
-  -e API_BASE_URL=http://host.docker.internal:5001 \
-  -e API_PUBLIC_URL=https://your-domain.com \
-  catiecli-bot
+#### 启用 Discord Bot
+
+编辑 `docker-compose.yml`，取消 bot 服务的注释，填入 Token：
+
+```yaml
+bot:
+  build: ./discord-bot
+  environment:
+    - DISCORD_TOKEN=你的Token
+    - API_BASE_URL=http://backend:5001
+    - API_PUBLIC_URL=https://你的域名
 ```
+
+然后 `docker-compose up -d` 重新启动
 
 ---
 
