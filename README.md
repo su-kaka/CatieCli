@@ -348,6 +348,34 @@ bot:
 
 ---
 
+## 🔄 更新升级
+
+### Docker Compose 部署
+
+```bash
+cd /你的安装目录
+git pull
+docker-compose up -d --build
+```
+
+### 1Panel 部署
+
+```bash
+cd /opt/CatieCli  # 或你的项目目录
+git pull
+# 然后在 1Panel 面板重启运行环境
+```
+
+### 一键脚本安装的
+
+```bash
+cd /opt/catiecli
+git pull
+docker-compose up -d --build
+```
+
+---
+
 ## ⚠️ 注意事项
 
 - **首次启动**自动创建 `.env` 配置文件和管理员账号
