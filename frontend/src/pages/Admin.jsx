@@ -69,6 +69,10 @@ export default function Admin() {
       } else if (tab === 'logs') {
         const res = await api.get('/api/admin/logs?limit=100')
         setLogs(res.data.logs)
+      } else if (tab === 'settings') {
+        // 获取当前配置
+        const res = await api.get('/api/manage/config')
+        setDefaultQuota(res.data.default_daily_quota || 100)
       }
     } catch (err) {
       console.error('获取数据失败', err)
