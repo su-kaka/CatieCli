@@ -98,7 +98,7 @@ CatieCli/
 
 ## 🚀 部署教程
 
-### 🎯 一键安装（最简单，推荐）
+### 🎯 一键安装（推荐）
 
 SSH 登录服务器，复制粘贴这一行命令：
 
@@ -106,9 +106,21 @@ SSH 登录服务器，复制粘贴这一行命令：
 curl -sSL https://raw.githubusercontent.com/mzrodyu/CatieCli/main/install.sh | bash
 ```
 
-自动完成：安装 Docker → 下载代码 → 启动服务
+自动完成：安装 Docker → 下载代码 → 询问密码 → 启动服务
 
-安装完成后会显示访问地址和密码。
+---
+
+### 🦥 懒人专属（给复制粘贴都嫌累的人）
+
+如果服务器已装好 Docker，一行搞定：
+
+```bash
+docker run -d -p 5001:5001 -v catiecli-data:/app/data --name catiecli ghcr.io/mzrodyu/catiecli:latest
+```
+
+访问 `http://你的IP:5001`，默认账号 `admin` / `admin123`
+
+> ⚠️ 注意：这个镜像可能不是最新版，建议用上面的一键安装
 
 ---
 
