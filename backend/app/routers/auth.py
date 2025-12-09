@@ -54,6 +54,12 @@ async def register(data: UserRegister, db: AsyncSession = Depends(get_db)):
     if settings.discord_only_registration:
         raise HTTPException(status_code=403, detail="请通过 Discord Bot 注册")
     
+    # 验证用户名和密码
+    if len(data.username) < 2 or len(data.username) > 50:
+        raise HTTPException(status_code=400, detail="用户名长度需在2-50字符之间")
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="密码长度至少6位")
+    
     # 检查用户名是否存在
     result = await db.execute(select(User).where(User.username == data.username))
     if result.scalar_one_or_none():
@@ -686,6 +692,10 @@ async def register_from_discord(data: DiscordRegister, db: AsyncSession = Depend
     # 验证用户名格式
     if not data.username.isalnum() or len(data.username) < 3 or len(data.username) > 20:
         raise HTTPException(status_code=400, detail="用户名必须是3-20位字母数字")
+    
+    # 验证密码长度
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="密码长度至少6位")
     
     # 创建用户
     user = User(
