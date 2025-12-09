@@ -348,8 +348,10 @@ async def verify_all_credentials(
             if account_type != "unknown":
                 cred.last_error = f"account_type:{account_type}"
             
-            # 确保变更被追踪
-            db.add(cred)
+            # 确保变更被追踪并立即写入
+            print(f"[检测] 设置 {cred.email} model_tier={cred.model_tier}, supports_3={supports_3}", flush=True)
+            await db.merge(cred)
+            await db.flush()
             
             if is_valid:
                 results["valid"] += 1
