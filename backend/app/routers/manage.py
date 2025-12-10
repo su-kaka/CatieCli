@@ -708,6 +708,16 @@ async def get_announcement():
     }
 
 
+@router.get("/public-config")
+async def get_public_config():
+    """获取公开配置（普通用户可访问）"""
+    from app.config import settings
+    return {
+        "force_donate": settings.force_donate,
+        "credential_pool_mode": settings.credential_pool_mode,
+    }
+
+
 @router.post("/config")
 async def update_config(
     allow_registration: Optional[bool] = Form(None),

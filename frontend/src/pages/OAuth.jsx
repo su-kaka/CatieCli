@@ -20,6 +20,17 @@ export default function OAuth() {
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [isDonate, setIsDonate] = useState(true)
+  const [forceDonate, setForceDonate] = useState(false)
+  
+  // 获取强制捐赠配置
+  useEffect(() => {
+    api.get('/api/manage/public-config').then(res => {
+      if (res.data.force_donate) {
+        setForceDonate(true)
+        setIsDonate(true)
+      }
+    }).catch(() => {})
+  }, [])
   
   // 引导流程状态
   const [showGuide, setShowGuide] = useState(false)
@@ -257,20 +268,34 @@ export default function OAuth() {
           </h2>
           
           {/* 捐赠选项 */}
-          <label className="flex items-start gap-3 p-4 mb-4 bg-purple-500/10 border border-purple-500/30 rounded-lg cursor-pointer hover:bg-purple-500/20 transition-colors">
-            <input
-              type="checkbox"
-              checked={isDonate}
-              onChange={(e) => setIsDonate(e.target.checked)}
-              className="mt-0.5 w-5 h-5 rounded border-purple-500 text-purple-600 focus:ring-purple-500"
-            />
-            <div>
-              <div className="text-purple-400 font-medium">🎁 捐赠到公共池（推荐）</div>
-              <p className="text-purple-300/70 text-sm mt-1">
-                捐赠后可使用所有公共凭证，还能获得额度奖励！
-              </p>
+          {forceDonate ? (
+            <div className="flex items-start gap-3 p-4 mb-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <div className="mt-0.5 w-5 h-5 rounded bg-green-500 flex items-center justify-center">
+                <Check size={14} className="text-white" />
+              </div>
+              <div>
+                <div className="text-green-400 font-medium">🤝 强制捐赠已开启</div>
+                <p className="text-green-300/70 text-sm mt-1">
+                  站长开启了强制捐赠，凭证将自动加入公共池
+                </p>
+              </div>
             </div>
-          </label>
+          ) : (
+            <label className="flex items-start gap-3 p-4 mb-4 bg-purple-500/10 border border-purple-500/30 rounded-lg cursor-pointer hover:bg-purple-500/20 transition-colors">
+              <input
+                type="checkbox"
+                checked={isDonate}
+                onChange={(e) => setIsDonate(e.target.checked)}
+                className="mt-0.5 w-5 h-5 rounded border-purple-500 text-purple-600 focus:ring-purple-500"
+              />
+              <div>
+                <div className="text-purple-400 font-medium">🎁 捐赠到公共池（推荐）</div>
+                <p className="text-purple-300/70 text-sm mt-1">
+                  捐赠后可使用所有公共凭证，还能获得额度奖励！
+                </p>
+              </div>
+            </label>
+          )}
 
           <button
             onClick={submitCallbackUrl}
