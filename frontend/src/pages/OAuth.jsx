@@ -267,20 +267,8 @@ export default function OAuth() {
             提交并生成凭证
           </h2>
           
-          {/* 捐赠选项 */}
-          {forceDonate ? (
-            <div className="flex items-start gap-3 p-4 mb-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-              <div className="mt-0.5 w-5 h-5 rounded bg-green-500 flex items-center justify-center">
-                <Check size={14} className="text-white" />
-              </div>
-              <div>
-                <div className="text-green-400 font-medium">🤝 强制捐赠已开启</div>
-                <p className="text-green-300/70 text-sm mt-1">
-                  站长开启了强制捐赠，凭证将自动加入公共池
-                </p>
-              </div>
-            </div>
-          ) : (
+          {/* 捐赠选项 - 强制捐赠时隐藏 */}
+          {!forceDonate && (
             <label className="flex items-start gap-3 p-4 mb-4 bg-purple-500/10 border border-purple-500/30 rounded-lg cursor-pointer hover:bg-purple-500/20 transition-colors">
               <input
                 type="checkbox"
