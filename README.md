@@ -1,10 +1,15 @@
 # 🐱 CatieCli-maomao
 
+![Discord](https://img.shields.io/badge/Discord-Bot_支持-5865F2?logo=discord&logoColor=white)
+![OpenAI Compatible](https://img.shields.io/badge/OpenAI-兼容接口-412991?logo=openai&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini-原生API-4285F4?logo=google&logoColor=white)
+
 **Gemini API 代理服务** - 支持 OpenAI 兼容接口、Gemini 原生接口、凭证池管理、Discord Bot 集成
 
 作者：**Catie猫猫**
 
-## ✨ 功能特性
+<details>
+<summary><strong>✨ 功能特性</strong>（点击展开）</summary>
 
 - 🔄 **OpenAI 兼容 API** - 直接替换 OpenAI 端点使用
 - 🔶 **Gemini 原生 API** - 支持 generateContent / streamGenerateContent
@@ -16,7 +21,10 @@
 - 🔐 **OAuth 授权** - 支持 Google OAuth 获取 Gemini 凭证
 - 📢 **公告系统** - 支持发布公告，强制阅读倒计时
 
-## 📡 API 接口
+</details>
+
+<details>
+<summary><strong>📡 API 接口</strong>（点击展开）</summary>
 
 ### OpenAI 兼容接口
 
@@ -48,6 +56,8 @@ GET /models
 - `gemini-3-pro-preview`
 
 支持后缀：`-maxthinking` / `-nothinking` / `-search`
+
+</details>
 
 ### 使用示例
 
