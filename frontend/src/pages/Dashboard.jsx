@@ -417,25 +417,29 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* 公共统计 */}
-            <h3 className="text-lg font-semibold mb-3">全站统计</h3>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
-                <Users className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-                <div className="text-xl font-bold">{stats?.user_count || '-'}</div>
-                <div className="text-gray-400 text-sm">注册用户</div>
-              </div>
-              <div className="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
-                <Zap className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-                <div className="text-xl font-bold">{stats?.active_credentials || '-'}</div>
-                <div className="text-gray-400 text-sm">可用凭证</div>
-              </div>
-              <div className="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
-                <Activity className="w-6 h-6 text-green-400 mx-auto mb-2" />
-                <div className="text-xl font-bold">{stats?.today_requests || '-'}</div>
-                <div className="text-gray-400 text-sm">今日请求</div>
-              </div>
-            </div>
+            {/* 全站统计 - 仅管理员可见 */}
+            {user?.is_admin && (
+              <>
+                <h3 className="text-lg font-semibold mb-3">全站统计</h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
+                    <Users className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+                    <div className="text-xl font-bold">{stats?.user_count || '-'}</div>
+                    <div className="text-gray-400 text-sm">注册用户</div>
+                  </div>
+                  <div className="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
+                    <Zap className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
+                    <div className="text-xl font-bold">{stats?.active_credentials || '-'}</div>
+                    <div className="text-gray-400 text-sm">可用凭证</div>
+                  </div>
+                  <div className="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
+                    <Activity className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                    <div className="text-xl font-bold">{stats?.today_requests || '-'}</div>
+                    <div className="text-gray-400 text-sm">今日请求</div>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
