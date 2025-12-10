@@ -110,20 +110,32 @@ class CredentialPool:
             query = query.where(Credential.user_id == user_id)
         
         elif pool_mode == "tier3_shared":
-            # 3.0共享模式：有3.0凭证的用户可用公共3.0池
+            # 3.0共享模式：
+            # - 请求3.0模型：需要有3.0凭证才能用公共3.0池
+            # - 请求2.5模型：所有用户都可以用公共2.5凭证
             user_has_tier3 = await CredentialPool.check_user_has_tier3_creds(db, user_id)
             
-            if required_tier == "3" and user_has_tier3:
-                # 请求3.0模型且用户有3.0凭证 → 可用公共3.0池
+            if required_tier == "3":
+                # 请求3.0模型
+                if user_has_tier3:
+                    # 用户有3.0凭证 → 可用公共3.0池
+                    query = query.where(
+                        or_(
+                            Credential.is_public == True,
+                            Credential.user_id == user_id
+                        )
+                    )
+                else:
+                    # 用户没有3.0凭证 → 只能用自己的凭证
+                    query = query.where(Credential.user_id == user_id)
+            else:
+                # 请求2.5模型 → 所有用户都可以用公共凭证
                 query = query.where(
                     or_(
                         Credential.is_public == True,
                         Credential.user_id == user_id
                     )
                 )
-            else:
-                # 其他情况只能用自己的凭证
-                query = query.where(Credential.user_id == user_id)
         
         else:  # full_shared (大锅饭模式)
             if user_has_public_creds:
