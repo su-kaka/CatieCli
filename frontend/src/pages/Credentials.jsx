@@ -27,6 +27,7 @@ export default function Credentials() {
   const [dragOver, setDragOver] = useState(false)
   const [quotaModal, setQuotaModal] = useState(null)  // 存储配额数据
   const [loadingQuota, setLoadingQuota] = useState(false)
+  const [verifyResult, setVerifyResult] = useState(null)  // 检测结果弹窗
 
   useEffect(() => {
     fetchCredentials()
@@ -124,23 +125,14 @@ export default function Credentials() {
     }
   }
   
-  const verifyCred = async (id) => {
+  const verifyCred = async (id, email) => {
     setVerifying(id)
-    setMessage({ type: '', text: '' })
     try {
       const res = await api.post(`/api/auth/credentials/${id}/verify`)
-      const { is_valid, model_tier, supports_3, error } = res.data
-      if (is_valid) {
-        setMessage({ 
-          type: 'success', 
-          text: `✅ 凭证有效！等级: ${model_tier}${supports_3 ? ' 🎉 支持 Gemini 3!' : ''}` 
-        })
-      } else {
-        setMessage({ type: 'error', text: `❌ 凭证无效: ${error || '未知错误'}` })
-      }
+      setVerifyResult({ ...res.data, email })
       fetchCredentials()
     } catch (err) {
-      setMessage({ type: 'error', text: '检测失败: ' + (err.response?.data?.detail || err.message) })
+      setVerifyResult({ error: err.response?.data?.detail || err.message, is_valid: false, email })
     } finally {
       setVerifying(null)
     }
@@ -396,7 +388,7 @@ export default function Credentials() {
                       
                       {/* 检测 */}
                       <button
-                        onClick={() => verifyCred(cred.id)}
+                        onClick={() => verifyCred(cred.id, cred.email || cred.name)}
                         disabled={verifying === cred.id}
                         className="px-3 py-1.5 rounded text-xs font-medium bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50 flex items-center gap-1"
                       >
@@ -588,6 +580,78 @@ export default function Credentials() {
               <button
                 onClick={() => setQuotaModal(null)}
                 className="px-4 py-2 bg-dark-600 hover:bg-dark-500 text-white rounded-lg text-sm"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 检测结果弹窗 */}
+      {verifyResult && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-800 rounded-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-dark-600">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <CheckCircle className={verifyResult.is_valid ? "text-green-400" : "text-red-400"} />
+                凭证检测结果
+              </h3>
+              <button onClick={() => setVerifyResult(null)} className="p-2 hover:bg-dark-600 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* 邮箱 */}
+              <div className="text-gray-400 text-sm">{verifyResult.email}</div>
+              
+              {/* 状态 */}
+              <div className="flex items-center gap-3">
+                <span className="text-gray-400">状态</span>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  verifyResult.is_valid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                }`}>
+                  {verifyResult.is_valid ? '✅ 有效' : '❌ 无效'}
+                </span>
+              </div>
+              
+              {/* 模型等级 */}
+              {verifyResult.model_tier && (
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-400">模型等级</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    verifyResult.model_tier === '3' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-600/50 text-gray-300'
+                  }`}>
+                    {verifyResult.model_tier === '3' ? '🚀 3.0 可用' : '2.5'}
+                  </span>
+                </div>
+              )}
+              
+              {/* 账号类型 */}
+              {verifyResult.account_type && (
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-400">账号类型</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    verifyResult.account_type === 'pro' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-600/50 text-gray-300'
+                  }`}>
+                    {verifyResult.account_type === 'pro' ? '⭐ Pro (2TB存储)' : '普通账号'}
+                  </span>
+                </div>
+              )}
+              
+              {/* 错误信息 */}
+              {verifyResult.error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                  {verifyResult.error}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-dark-600 flex justify-end">
+              <button
+                onClick={() => setVerifyResult(null)}
+                className="px-6 py-2 bg-dark-600 hover:bg-dark-500 text-white rounded-lg"
               >
                 关闭
               </button>

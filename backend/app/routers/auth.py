@@ -323,39 +323,33 @@ async def upload_credentials(
                         test_url = "https://cloudcode-pa.googleapis.com/v1internal:generateContent"
                         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
                         
-                        # 先测试 3.0（优先）
-                        test_payload_3 = {
-                            "model": "gemini-2.5-pro",
+                        # 先测试 2.5 判断凭证是否有效
+                        test_payload_25 = {
+                            "model": "gemini-2.5-flash",
                             "project": project_id,
                             "request": {"contents": [{"role": "user", "parts": [{"text": "hi"}]}]}
                         }
-                        resp = await client.post(test_url, headers=headers, json=test_payload_3)
-                        if resp.status_code == 200:
+                        resp = await client.post(test_url, headers=headers, json=test_payload_25)
+                        
+                        if resp.status_code == 200 or resp.status_code == 429:
                             is_valid = True
-                            model_tier = "3"
-                            verify_msg = f"✅ 有效 (等级: 3)"
-                        elif resp.status_code == 429:
-                            is_valid = True
-                            model_tier = "3"
-                            verify_msg = f"✅ 有效但配额用尽(429) (等级: 3)"
-                        else:
-                            # 3.0 失败，再测试 2.5
-                            test_payload_25 = {
-                                "model": "gemini-2.5-flash",
+                            model_tier = "2.5"
+                            
+                            # 凭证有效，再测试 3.0
+                            test_payload_3 = {
+                                "model": "gemini-3-pro-preview",
                                 "project": project_id,
                                 "request": {"contents": [{"role": "user", "parts": [{"text": "hi"}]}]}
                             }
-                            resp = await client.post(test_url, headers=headers, json=test_payload_25)
-                            if resp.status_code == 200:
-                                is_valid = True
-                                model_tier = "2.5"
-                                verify_msg = f"✅ 有效 (等级: 2.5)"
-                            elif resp.status_code == 429:
-                                is_valid = True
-                                model_tier = "2.5"
-                                verify_msg = f"✅ 有效但配额用尽(429) (等级: 2.5)"
+                            resp3 = await client.post(test_url, headers=headers, json=test_payload_3)
+                            
+                            if resp3.status_code == 200 or resp3.status_code == 429:
+                                model_tier = "3"
+                                verify_msg = f"✅ 有效 (等级: 3)"
                             else:
-                                verify_msg = f"❌ 无效 ({resp.status_code})"
+                                verify_msg = f"✅ 有效 (等级: 2.5)"
+                        else:
+                            verify_msg = f"❌ 无效 ({resp.status_code})"
                 else:
                     verify_msg = "❌ 无法获取 token"
             except Exception as e:
@@ -592,43 +586,39 @@ async def verify_my_credential(
                 test_url = "https://cloudcode-pa.googleapis.com/v1internal:generateContent"
                 headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
                 
-                # 先测试 3.0（优先）
-                test_payload_3 = {
-                    "model": "gemini-2.5-pro",
+                # 先测试 2.5 判断凭证是否有效
+                test_payload_25 = {
+                    "model": "gemini-2.5-flash",
                     "project": cred.project_id or "",
                     "request": {"contents": [{"role": "user", "parts": [{"text": "hi"}]}]}
                 }
-                resp = await client.post(test_url, headers=headers, json=test_payload_3)
-                print(f"[凭证检测] gemini-2.5-pro 响应: {resp.status_code}", flush=True)
+                resp = await client.post(test_url, headers=headers, json=test_payload_25)
+                print(f"[凭证检测] gemini-2.5-flash 响应: {resp.status_code}", flush=True)
                 
-                if resp.status_code == 200:
+                if resp.status_code == 200 or resp.status_code == 429:
                     is_valid = True
-                    supports_3 = True
-                elif resp.status_code == 429:
-                    is_valid = True
-                    supports_3 = True
-                    error_msg = "配额已用尽 (429)"
-                else:
-                    # 3.0 失败，再测试 2.5
-                    test_payload_25 = {
-                        "model": "gemini-2.5-flash",
+                    if resp.status_code == 429:
+                        error_msg = "2.5 配额已用尽 (429)"
+                    
+                    # 凭证有效，再测试 3.0
+                    test_payload_3 = {
+                        "model": "gemini-3-pro-preview",
                         "project": cred.project_id or "",
                         "request": {"contents": [{"role": "user", "parts": [{"text": "hi"}]}]}
                     }
-                    resp = await client.post(test_url, headers=headers, json=test_payload_25)
-                    print(f"[凭证检测] gemini-2.5-flash 响应: {resp.status_code}", flush=True)
+                    resp3 = await client.post(test_url, headers=headers, json=test_payload_3)
+                    print(f"[凭证检测] gemini-3-pro-preview 响应: {resp3.status_code}", flush=True)
                     
-                    if resp.status_code == 200:
-                        is_valid = True
-                        supports_3 = False
-                    elif resp.status_code == 429:
-                        is_valid = True
-                        supports_3 = False
-                        error_msg = "配额已用尽 (429)"
-                    elif resp.status_code in [401, 403]:
-                        error_msg = f"认证失败 ({resp.status_code})"
+                    if resp3.status_code == 200 or resp3.status_code == 429:
+                        supports_3 = True
+                        if resp3.status_code == 429:
+                            error_msg = "3.0 配额已用尽 (429)"
                     else:
-                        error_msg = f"API 返回 {resp.status_code}"
+                        supports_3 = False
+                elif resp.status_code in [401, 403]:
+                    error_msg = f"认证失败 ({resp.status_code})"
+                else:
+                    error_msg = f"API 返回 {resp.status_code}"
             except Exception as e:
                 error_msg = f"请求异常: {str(e)[:30]}"
         
