@@ -470,7 +470,7 @@ export default function Dashboard() {
               <div className="space-y-3">
                 {myCredentials.map(cred => (
                   <div key={cred.id} className="p-4 bg-dark-800 border border-dark-600 rounded-xl">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-3">
                       <div className="flex-1 min-w-0">
                         {/* 凭证名称 - 斜体灰色 */}
                         <div className="text-gray-400 italic mb-2 truncate">
@@ -520,7 +520,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 ml-4 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {/* 配额按钮 */}
                         <button
                           onClick={() => fetchQuota(cred.id)}
