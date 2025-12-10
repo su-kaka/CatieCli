@@ -413,8 +413,11 @@ async def get_credential_quota(
     if cred.user_id != user.id and not user.is_admin:
         raise HTTPException(status_code=403, detail="无权查看此凭证")
     
-    # 获取今天的开始时间（UTC）
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    # 获取今天的开始时间（北京时间 15:00 = UTC 07:00 重置）
+    now = datetime.utcnow()
+    today_7am = now.replace(hour=7, minute=0, second=0, microsecond=0)
+    # 如果当前时间还没到 UTC 07:00，则从昨天 07:00 开始
+    today_start = today_7am if now >= today_7am else today_7am - timedelta(days=1)
     
     # 判断账号类型（从 last_error 字段解析，格式: account_type:pro）
     is_pro = False
@@ -481,8 +484,8 @@ async def get_credential_quota(
     total_remaining = max(0, total_limit - total_used)
     total_percentage = min(100, (total_remaining / total_limit) * 100) if total_limit > 0 else 0
     
-    # 获取最后重置时间（每日 UTC 0:00 重置）
-    next_reset = (datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1))
+    # 获取下次重置时间（北京时间 15:00 = UTC 07:00）
+    next_reset = today_start + timedelta(days=1)
     
     return {
         "credential_id": credential_id,
