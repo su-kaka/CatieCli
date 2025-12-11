@@ -474,7 +474,7 @@ export default function Dashboard() {
         {activeTab === 'credentials' && (
           <>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">我的凭证</h2>
+              <h2 className="text-xl font-semibold">我的凭证 ({myCredentials.length})</h2>
               <div className="flex gap-2">
                 <Link 
                   to="/credentials"
