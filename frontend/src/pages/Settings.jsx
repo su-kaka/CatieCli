@@ -170,18 +170,32 @@ export default function Settings() {
             )}
           </div>
 
-          {/* 凭证奖励 */}
+          {/* 凭证奖励 - 按等级细分 */}
           <div>
-            <h3 className="font-semibold mb-2">凭证贡献奖励额度 🎁</h3>
-            <p className="text-gray-400 text-sm mb-3">用户每捐赠一个凭证到公共池时增加的配额</p>
-            <input
-              type="number"
-              value={config?.credential_reward_quota ?? ''}
-              onChange={(e) => setConfig({ ...config, credential_reward_quota: e.target.value === '' ? '' : parseInt(e.target.value) })}
-              className="w-full bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
+            <h3 className="font-semibold mb-2">凭证上传奖励额度 🎁</h3>
+            <p className="text-gray-400 text-sm mb-3">用户上传凭证到公共池时增加的配额（按凭证等级区分）</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">2.5 凭证奖励</label>
+                <input
+                  type="number"
+                  value={config?.credential_reward_quota_25 ?? ''}
+                  onChange={(e) => setConfig({ ...config, credential_reward_quota_25: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                  className="w-full bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">3.0 凭证奖励</label>
+                <input
+                  type="number"
+                  value={config?.credential_reward_quota_30 ?? ''}
+                  onChange={(e) => setConfig({ ...config, credential_reward_quota_30: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                  className="w-full bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            </div>
             <p className="text-green-400 text-sm mt-2">
-              💡 当前设置：用户贡献凭证后额度 +{config?.credential_reward_quota ?? 1000}
+              💡 2.5凭证 +{config?.credential_reward_quota_25 ?? 1000} | 3.0凭证 +{config?.credential_reward_quota_30 ?? 2000}
             </p>
           </div>
 
@@ -210,17 +224,17 @@ export default function Settings() {
               )}
               {config?.credential_pool_mode === 'full_shared' && (
                 <>
-                  <p className="text-green-400">🎉 捐赠凭证后可使用所有公共凭证（2.5+3.0）</p>
-                  <p className="text-gray-400">🚫 未捐赠只能用自己的凭证</p>
+                  <p className="text-green-400">🎉 上传凭证后可使用所有公共凭证（2.5+3.0）</p>
+                  <p className="text-gray-400">🚫 未上传只能用自己的凭证</p>
                 </>
               )}
             </div>
           </div>
 
-          {/* 强制捐赠 */}
+          {/* 强制公开 */}
           <div className="flex items-center justify-between bg-gray-700/50 rounded-lg px-4 py-3">
             <div>
-              <h3 className="font-semibold">强制捐赠 🤝</h3>
+              <h3 className="font-semibold">强制公开 🤝</h3>
               <p className="text-gray-400 text-sm">上传凭证时强制设为公开，不给选择</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -234,11 +248,11 @@ export default function Settings() {
             </label>
           </div>
 
-          {/* 锁定捐赠 */}
+          {/* 锁定公开 */}
           <div className="flex items-center justify-between bg-gray-700/50 rounded-lg px-4 py-3">
             <div>
-              <h3 className="font-semibold">锁定捐赠 🔒</h3>
-              <p className="text-gray-400 text-sm">有效凭证不允许取消捐赠（失效的可以取消）</p>
+              <h3 className="font-semibold">锁定公开 🔒</h3>
+              <p className="text-gray-400 text-sm">有效凭证不允许取消公开（失效的可以取消）</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -255,7 +269,7 @@ export default function Settings() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h3 className="font-semibold mb-2">基础速率限制 ⏱️</h3>
-              <p className="text-gray-400 text-sm mb-3">未贡献凭证用户的每分钟请求数</p>
+              <p className="text-gray-400 text-sm mb-3">未上传凭证用户的每分钟请求数</p>
               <input
                 type="number"
                 value={config?.base_rpm ?? ''}
@@ -265,8 +279,8 @@ export default function Settings() {
               <p className="text-gray-500 text-sm mt-1">次/分钟</p>
             </div>
             <div>
-              <h3 className="font-semibold mb-2">贡献者速率限制 🚀</h3>
-              <p className="text-gray-400 text-sm mb-3">贡献凭证用户的每分钟请求数</p>
+              <h3 className="font-semibold mb-2">上传者速率限制 🚀</h3>
+              <p className="text-gray-400 text-sm mb-3">上传凭证用户的每分钟请求数</p>
               <input
                 type="number"
                 value={config?.contributor_rpm ?? ''}

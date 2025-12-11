@@ -170,21 +170,22 @@ async def chat_completions(
     # 检查用户是否参与大锅饭
     user_has_public = await CredentialPool.check_user_has_public_creds(db, user.id)
     
-    # 速率限制检查 (RPM)
-    one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
-    rpm_result = await db.execute(
-        select(func.count(UsageLog.id))
-        .where(UsageLog.user_id == user.id)
-        .where(UsageLog.created_at >= one_minute_ago)
-    )
-    current_rpm = rpm_result.scalar() or 0
-    max_rpm = settings.contributor_rpm if user_has_public else settings.base_rpm
-    
-    if current_rpm >= max_rpm:
-        raise HTTPException(
-            status_code=429, 
-            detail=f"速率限制: {max_rpm} 次/分钟。{'上传凭证可提升至 ' + str(settings.contributor_rpm) + ' 次/分钟' if not user_has_public else ''}"
+    # 速率限制检查 (RPM) - 管理员豁免
+    if not user.is_admin:
+        one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
+        rpm_result = await db.execute(
+            select(func.count(UsageLog.id))
+            .where(UsageLog.user_id == user.id)
+            .where(UsageLog.created_at >= one_minute_ago)
         )
+        current_rpm = rpm_result.scalar() or 0
+        max_rpm = settings.contributor_rpm if user_has_public else settings.base_rpm
+        
+        if current_rpm >= max_rpm:
+            raise HTTPException(
+                status_code=429, 
+                detail=f"速率限制: {max_rpm} 次/分钟。{'上传凭证可提升至 ' + str(settings.contributor_rpm) + ' 次/分钟' if not user_has_public else ''}"
+            )
     
     # 重试逻辑：报错时切换凭证重试
     max_retries = settings.error_retry_count
@@ -428,18 +429,19 @@ async def gemini_generate_content(
     # 检查用户是否参与大锅饭
     user_has_public = await CredentialPool.check_user_has_public_creds(db, user.id)
     
-    # 速率限制
-    one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
-    rpm_result = await db.execute(
-        select(func.count(UsageLog.id))
-        .where(UsageLog.user_id == user.id)
-        .where(UsageLog.created_at >= one_minute_ago)
-    )
-    current_rpm = rpm_result.scalar() or 0
-    max_rpm = settings.contributor_rpm if user_has_public else settings.base_rpm
-    
-    if current_rpm >= max_rpm:
-        raise HTTPException(status_code=429, detail=f"速率限制: {max_rpm} 次/分钟")
+    # 速率限制 - 管理员豁免
+    if not user.is_admin:
+        one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
+        rpm_result = await db.execute(
+            select(func.count(UsageLog.id))
+            .where(UsageLog.user_id == user.id)
+            .where(UsageLog.created_at >= one_minute_ago)
+        )
+        current_rpm = rpm_result.scalar() or 0
+        max_rpm = settings.contributor_rpm if user_has_public else settings.base_rpm
+        
+        if current_rpm >= max_rpm:
+            raise HTTPException(status_code=429, detail=f"速率限制: {max_rpm} 次/分钟")
     
     # 获取凭证
     credential = await CredentialPool.get_available_credential(
@@ -547,18 +549,19 @@ async def gemini_stream_generate_content(
     # 检查用户是否参与大锅饭
     user_has_public = await CredentialPool.check_user_has_public_creds(db, user.id)
     
-    # 速率限制
-    one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
-    rpm_result = await db.execute(
-        select(func.count(UsageLog.id))
-        .where(UsageLog.user_id == user.id)
-        .where(UsageLog.created_at >= one_minute_ago)
-    )
-    current_rpm = rpm_result.scalar() or 0
-    max_rpm = settings.contributor_rpm if user_has_public else settings.base_rpm
-    
-    if current_rpm >= max_rpm:
-        raise HTTPException(status_code=429, detail=f"速率限制: {max_rpm} 次/分钟")
+    # 速率限制 - 管理员豁免
+    if not user.is_admin:
+        one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
+        rpm_result = await db.execute(
+            select(func.count(UsageLog.id))
+            .where(UsageLog.user_id == user.id)
+            .where(UsageLog.created_at >= one_minute_ago)
+        )
+        current_rpm = rpm_result.scalar() or 0
+        max_rpm = settings.contributor_rpm if user_has_public else settings.base_rpm
+        
+        if current_rpm >= max_rpm:
+            raise HTTPException(status_code=429, detail=f"速率限制: {max_rpm} 次/分钟")
     
     # 获取凭证
     credential = await CredentialPool.get_available_credential(
@@ -666,19 +669,20 @@ async def openai_proxy(
     
     start_time = time.time()
     
-    # 检查速率限制
+    # 检查速率限制 - 管理员豁免
     user_has_public = await CredentialPool.check_user_has_public_creds(db, user.id)
-    one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
-    rpm_result = await db.execute(
-        select(func.count(UsageLog.id))
-        .where(UsageLog.user_id == user.id)
-        .where(UsageLog.created_at >= one_minute_ago)
-    )
-    current_rpm = rpm_result.scalar() or 0
-    max_rpm = settings.contributor_rpm if user_has_public else settings.base_rpm
-    
-    if current_rpm >= max_rpm:
-        raise HTTPException(status_code=429, detail=f"速率限制: {max_rpm} 次/分钟")
+    if not user.is_admin:
+        one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
+        rpm_result = await db.execute(
+            select(func.count(UsageLog.id))
+            .where(UsageLog.user_id == user.id)
+            .where(UsageLog.created_at >= one_minute_ago)
+        )
+        current_rpm = rpm_result.scalar() or 0
+        max_rpm = settings.contributor_rpm if user_has_public else settings.base_rpm
+        
+        if current_rpm >= max_rpm:
+            raise HTTPException(status_code=429, detail=f"速率限制: {max_rpm} 次/分钟")
     
     # 构建目标 URL
     target_url = f"{settings.openai_api_base}/{path}"

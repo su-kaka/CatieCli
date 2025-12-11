@@ -92,7 +92,7 @@ export default function OAuth() {
         callback_url: callbackUrl,
         is_public: isDonate  // 是否捐赠到公共池
       })
-      const donateText = res.data.is_public ? '（已捐赠到公共池 🎉）' : '（私有凭证）'
+      const donateText = res.data.is_public ? '（已上传到公共池 🎉）' : '（私有凭证）'
       setMessage({ type: 'success', text: `凭证获取成功！邮箱: ${res.data.email} ${donateText}` })
       setCallbackUrl('')
     } catch (err) {
@@ -277,9 +277,9 @@ export default function OAuth() {
                 className="mt-0.5 w-5 h-5 rounded border-purple-500 text-purple-600 focus:ring-purple-500"
               />
               <div>
-                <div className="text-purple-400 font-medium">🎁 捐赠到公共池（推荐）</div>
+                <div className="text-purple-400 font-medium">🎁 上传到公共池（推荐）</div>
                 <p className="text-purple-300/70 text-sm mt-1">
-                  捐赠后可使用所有公共凭证，还能获得额度奖励！
+                  上传后可使用所有公共凭证，还能获得额度奖励！
                 </p>
               </div>
             </label>

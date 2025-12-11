@@ -681,6 +681,8 @@ async def get_config(user: User = Depends(get_current_admin)):
         "default_daily_quota": settings.default_daily_quota,
         "no_credential_quota": settings.no_credential_quota,
         "credential_reward_quota": settings.credential_reward_quota,
+        "credential_reward_quota_25": settings.credential_reward_quota_25,
+        "credential_reward_quota_30": settings.credential_reward_quota_30,
         "base_rpm": settings.base_rpm,
         "contributor_rpm": settings.contributor_rpm,
         "error_retry_count": settings.error_retry_count,
@@ -728,6 +730,8 @@ async def update_config(
     default_daily_quota: Optional[int] = Form(None),
     no_credential_quota: Optional[int] = Form(None),
     credential_reward_quota: Optional[int] = Form(None),
+    credential_reward_quota_25: Optional[int] = Form(None),
+    credential_reward_quota_30: Optional[int] = Form(None),
     base_rpm: Optional[int] = Form(None),
     contributor_rpm: Optional[int] = Form(None),
     error_retry_count: Optional[int] = Form(None),
@@ -768,6 +772,14 @@ async def update_config(
         settings.credential_reward_quota = credential_reward_quota
         await save_config_to_db("credential_reward_quota", credential_reward_quota)
         updated["credential_reward_quota"] = credential_reward_quota
+    if credential_reward_quota_25 is not None:
+        settings.credential_reward_quota_25 = credential_reward_quota_25
+        await save_config_to_db("credential_reward_quota_25", credential_reward_quota_25)
+        updated["credential_reward_quota_25"] = credential_reward_quota_25
+    if credential_reward_quota_30 is not None:
+        settings.credential_reward_quota_30 = credential_reward_quota_30
+        await save_config_to_db("credential_reward_quota_30", credential_reward_quota_30)
+        updated["credential_reward_quota_30"] = credential_reward_quota_30
     if base_rpm is not None:
         settings.base_rpm = base_rpm
         await save_config_to_db("base_rpm", base_rpm)
@@ -856,6 +868,15 @@ async def get_global_stats(
     )
     today_requests = today_result.scalar() or 0
     
+    # 今日成功/失败统计
+    today_success_result = await db.execute(
+        select(func.count(UsageLog.id))
+        .where(func.date(UsageLog.created_at) == today)
+        .where(UsageLog.status_code == 200)
+    )
+    today_success = today_success_result.scalar() or 0
+    today_failed = today_requests - today_success
+    
     # 凭证统计
     total_creds = await db.execute(select(func.count(Credential.id)))
     active_creds = await db.execute(
@@ -883,6 +904,8 @@ async def get_global_stats(
         "requests": {
             "last_hour": hour_requests,
             "today": today_requests,
+            "today_success": today_success,
+            "today_failed": today_failed,
             "by_category": {
                 "flash": flash_count,
                 "pro_2.5": pro_count,

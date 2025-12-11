@@ -395,9 +395,15 @@ async def upload_credentials(
             )
             db.add(credential)
             
+            # 如果是公开且有效的凭证，根据凭证等级增加额度奖励
+            if actual_public and is_valid:
+                reward = settings.credential_reward_quota_30 if model_tier == "3" else settings.credential_reward_quota_25
+                user.daily_quota += reward
+                print(f"[上传凭证] 用户 {user.username} 获得 {reward} 额度奖励 (等级: {model_tier})", flush=True)
+            
             status_msg = f"上传成功 {verify_msg}"
             if is_public and not is_valid:
-                status_msg += " (无效凭证不会捐赠)"
+                status_msg += " (无效凭证不会上传到公共池)"
             results.append({"filename": file.filename, "status": "success" if is_valid else "warning", "message": status_msg})
             success_count += 1
             
@@ -465,18 +471,26 @@ async def update_my_credential(
             # 检查是否有认证错误（403等）
             if cred.last_error and ('403' in cred.last_error or '401' in cred.last_error or '认证' in cred.last_error or '无效' in cred.last_error):
                 raise HTTPException(status_code=400, detail="凭证存在认证错误，不能捐赠")
-            # 捐赠奖励配额（只有从私有变公开才奖励）
+            # 捐赠奖励配额（只有从私有变公开才奖励，根据凭证等级）
             if not cred.is_public:
-                user.daily_quota += settings.credential_reward_quota
-                print(f"[凭证捐赠] 用户 {user.username} 获得 {settings.credential_reward_quota} 额度奖励", flush=True)
+                reward = settings.credential_reward_quota_30 if cred.model_tier == "3" else settings.credential_reward_quota_25
+                user.daily_quota += reward
+                print(f"[凭证捐赠] 用户 {user.username} 获得 {reward} 额度奖励 (等级: {cred.model_tier})", flush=True)
         else:
             # 取消捐赠
             if cred.is_public:
                 # 检查锁定捐赠（有效凭证不允许取消）
                 if settings.lock_donate and cred.is_active:
                     raise HTTPException(status_code=400, detail="站长已锁定捐赠，有效凭证不能取消捐赠")
-                user.daily_quota = max(settings.default_daily_quota, user.daily_quota - settings.credential_reward_quota)
-                print(f"[取消捐赠] 用户 {user.username} 扣除 {settings.credential_reward_quota} 额度", flush=True)
+                # 根据凭证等级扣除额度
+                deduct = settings.credential_reward_quota_30 if cred.model_tier == "3" else settings.credential_reward_quota_25
+                # 仅在当前额度包含奖励部分时才回收，避免把自定义额度打回默认
+                if user.daily_quota - settings.default_daily_quota >= deduct:
+                    user.daily_quota = max(
+                        settings.default_daily_quota,
+                        user.daily_quota - deduct,
+                    )
+                print(f"[取消捐赠] 用户 {user.username} 扣除 {deduct} 额度 (等级: {cred.model_tier})", flush=True)
         cred.is_public = is_public
     if is_active is not None:
         # 手动启用时清除错误（但不清除403错误记录）
@@ -500,10 +514,16 @@ async def delete_my_credential(
     if not cred:
         raise HTTPException(status_code=404, detail="凭证不存在")
     
-    # 如果是公开凭证，删除时扣除配额
+    # 如果是公开凭证，删除时根据凭证等级扣除配额
     if cred.is_public:
-        user.daily_quota = max(settings.default_daily_quota, user.daily_quota - settings.credential_reward_quota)
-        print(f"[删除凭证] 用户 {user.username} 扣除 {settings.credential_reward_quota} 额度", flush=True)
+        deduct = settings.credential_reward_quota_30 if cred.model_tier == "3" else settings.credential_reward_quota_25
+        # 仅在当前额度包含奖励部分时才回收，避免把自定义额度打回默认
+        if user.daily_quota - settings.default_daily_quota >= deduct:
+            user.daily_quota = max(
+                settings.default_daily_quota,
+                user.daily_quota - deduct,
+            )
+            print(f"[删除凭证] 用户 {user.username} 扣除 {deduct} 额度 (等级: {cred.model_tier})", flush=True)
     
     await db.delete(cred)
     await db.commit()

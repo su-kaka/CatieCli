@@ -61,7 +61,7 @@ export default function Dashboard() {
   useEffect(() => {
     const oauth = searchParams.get('oauth')
     if (oauth === 'success') {
-      setOauthMessage({ type: 'success', text: '🎉 凭证贡献成功！感谢您的支持！' })
+      setOauthMessage({ type: 'success', text: '🎉 凭证上传成功！感谢您的支持！' })
       setSearchParams({})
     } else if (oauth === 'error') {
       const msg = searchParams.get('msg') || '未知错误'
@@ -91,8 +91,14 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    api.get('/api/auth/me').then(res => setUserInfo(res.data)).catch(() => {})
-    fetchStats()
+    // 并行加载数据以提升性能
+    Promise.all([
+      api.get('/api/auth/me').catch(() => null),
+      api.get('/api/auth/stats').catch(() => null)
+    ]).then(([meRes, statsRes]) => {
+      if (meRes?.data) setUserInfo(meRes.data)
+      if (statsRes?.data) setStats(statsRes.data)
+    })
   }, [])
 
   const copyToClipboard = async (text) => {
@@ -410,9 +416,9 @@ export default function Dashboard() {
                   <Gift className="w-12 h-12 text-purple-400" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-1">贡献凭证，共享使用</h3>
+                  <h3 className="text-lg font-semibold mb-1">上传凭证，共享使用</h3>
                   <p className="text-gray-400 text-sm">
-                    通过 Google OAuth 授权，将您的 Gemini API 凭证贡献到公共池，让更多人免费使用
+                    通过 Google OAuth 授权，将您的 Gemini API 凭证上传到公共池，让更多人免费使用
                   </p>
                 </div>
                 <Link 
@@ -420,7 +426,7 @@ export default function Dashboard() {
                   className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center gap-2"
                 >
                   <ExternalLink size={18} />
-                  立即贡献
+                  立即上传
                 </Link>
               </div>
             </div>
@@ -442,8 +448,12 @@ export default function Dashboard() {
                   </div>
                   <div className="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
                     <Activity className="w-6 h-6 text-green-400 mx-auto mb-2" />
-                    <div className="text-xl font-bold">{stats?.today_requests || '-'}</div>
-                    <div className="text-gray-400 text-sm">今日请求</div>
+                    <div className="text-xl font-bold">
+                      <span className="text-green-400">{stats?.today_success || 0}</span>
+                      <span className="text-gray-500 mx-1">/</span>
+                      <span className="text-red-400">{stats?.today_failed || 0}</span>
+                    </div>
+                    <div className="text-gray-400 text-sm">成功/失败</div>
                   </div>
                 </div>
               </>
@@ -526,7 +536,7 @@ export default function Dashboard() {
                           {/* 捐赠状态 - 强制捐赠时隐藏 */}
                           {!forceDonate && cred.is_public && (
                             <span className="text-xs px-2.5 py-1 border border-purple-500 text-purple-400 rounded font-medium">
-                              已捐赠
+                              已公开
                             </span>
                           )}
                           {!forceDonate && !cred.is_public && (
@@ -588,7 +598,7 @@ export default function Dashboard() {
                             onClick={() => toggleCredPublic(cred.id, cred.is_public)}
                             className={`px-3 py-1.5 rounded text-xs font-medium ${cred.is_public ? 'bg-gray-600 hover:bg-gray-500' : 'bg-green-600 hover:bg-green-500'} text-white`}
                           >
-                            {cred.is_public ? '取消捐赠' : '捐赠'}
+                            {cred.is_public ? '取消公开' : '设为公开'}
                           </button>
                         )}
                         {/* 删除 */}
@@ -610,7 +620,7 @@ export default function Dashboard() {
               <div className="mt-6 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
                 <div className="text-amber-400 font-medium mb-1">💡 大锅饭规则</div>
                 <div className="text-amber-300/70 text-sm">
-                  捐赠凭证后，您可以使用所有公共池凭证。不捐赠则只能用自己的凭证。
+                  上传凭证后，您可以使用所有公共池凭证。不上传则只能用自己的凭证。
                 </div>
               </div>
             )}
@@ -680,7 +690,7 @@ export default function Dashboard() {
                       <div className="text-gray-400 mb-1">在 SillyTavern / 酒馆 中使用</div>
                       <ol className="text-gray-300 space-y-1 list-decimal list-inside">
                         <li>打开连接设置 → Chat Completion</li>
-                        <li>选择 <span className="text-purple-400">OpenAI</span></li>
+                        <li>选择 <span className="text-purple-400">兼容OpenAI</span> 或 <span className="text-purple-400">OpenAI</span></li>
                         <li>API 端点填写上方地址</li>
                         <li>API Key 填写您的密钥</li>
                         <li>模型: <span className="text-purple-400">gemini-2.5-flash</span> 或 <span className="text-purple-400">gemini-2.5-pro</span></li>

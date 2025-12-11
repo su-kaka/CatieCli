@@ -282,14 +282,20 @@ class CredentialPool:
                 # 禁用凭证
                 cred.is_active = False
                 
-                # 如果是公开凭证，降级用户额度
+                # 如果是公开凭证，根据凭证等级降级用户额度
                 if cred.is_public and cred.user_id:
                     user_result = await db.execute(select(User).where(User.id == cred.user_id))
                     user = user_result.scalar_one_or_none()
                     if user:
-                        # 扣除之前奖励的额度
-                        user.daily_quota = max(settings.default_daily_quota, user.daily_quota - settings.credential_reward_quota)
-                        print(f"[凭证降级] 用户 {user.username} 凭证失效，额度降级", flush=True)
+                        # 根据凭证等级扣除额度
+                        deduct = settings.credential_reward_quota_30 if cred.model_tier == "3" else settings.credential_reward_quota_25
+                        # 仅在当前额度包含奖励部分时才回收，避免把自定义额度打回默认
+                        if user.daily_quota - settings.default_daily_quota >= deduct:
+                            user.daily_quota = max(
+                                settings.default_daily_quota,
+                                user.daily_quota - deduct,
+                            )
+                            print(f"[凭证降级] 用户 {user.username} 凭证失效，扣除 {deduct} 额度 (等级: {cred.model_tier})", flush=True)
                 
                 await db.commit()
                 print(f"[凭证禁用] 凭证 {credential_id} 已禁用: {error}", flush=True)

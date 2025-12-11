@@ -33,6 +33,10 @@ export default function Admin() {
   const [newCredKey, setNewCredKey] = useState('')
   const [verifyingAll, setVerifyingAll] = useState(false)
   const [verifyResult, setVerifyResult] = useState(null)
+  
+  // 凭证分页
+  const [credPage, setCredPage] = useState(1)
+  const credPerPage = 20
 
   // 模态框状态
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '', type: 'info' })
@@ -156,16 +160,23 @@ export default function Admin() {
   }
 
   const verifyAllCredentials = () => {
-    showConfirm('检测凭证', '确定要检测所有凭证？这可能需要一些时间。', async () => {
+    showConfirm('检测凭证', '确定要检测所有凭证？检测将在后台运行，完成后会弹窗通知结果。', async () => {
       setVerifyingAll(true)
       setVerifyResult(null)
+      showAlert('检测中', '凭证检测已开始，请稍候...检测完成后会弹窗通知', 'info')
       try {
-        const res = await api.post('/api/manage/credentials/verify-all')
+        const res = await api.post('/api/manage/credentials/verify-all', null, {
+          timeout: 600000 // 10分钟超时
+        })
         setVerifyResult(res.data)
         fetchData()
-        showAlert('检测完成', `有效: ${res.data.valid}, 无效: ${res.data.invalid}, Pro: ${res.data.pro}`, 'success')
+        showAlert('检测完成', `总计: ${res.data.total}\n有效: ${res.data.valid}\n无效: ${res.data.invalid}\n3.0可用: ${res.data.tier3}\nPro账号: ${res.data.pro}`, 'success')
       } catch (err) {
-        showAlert('检测失败', err.response?.data?.detail || err.message, 'error')
+        if (err.code === 'ECONNABORTED') {
+          showAlert('检测超时', '检测时间过长，请稍后刷新页面查看结果', 'error')
+        } else {
+          showAlert('检测失败', err.response?.data?.detail || err.message, 'error')
+        }
       } finally {
         setVerifyingAll(false)
       }
@@ -605,7 +616,7 @@ export default function Admin() {
                       </tr>
                     </thead>
                     <tbody>
-                      {credentials.map(c => (
+                      {credentials.slice((credPage - 1) * credPerPage, credPage * credPerPage).map(c => (
                         <tr key={c.id}>
                           <td className="text-gray-400">{c.id}</td>
                           <td>{c.name}</td>
@@ -659,6 +670,31 @@ export default function Admin() {
                     </tbody>
                   </table>
                 </div>
+                
+                {/* 分页控件 */}
+                {credentials.length > credPerPage && (
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-gray-400">
+                      共 {credentials.length} 个凭证，第 {credPage}/{Math.ceil(credentials.length / credPerPage)} 页
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setCredPage(p => Math.max(1, p - 1))}
+                        disabled={credPage === 1}
+                        className="px-3 py-1.5 bg-dark-700 hover:bg-dark-600 disabled:opacity-50 rounded text-sm"
+                      >
+                        上一页
+                      </button>
+                      <button
+                        onClick={() => setCredPage(p => Math.min(Math.ceil(credentials.length / credPerPage), p + 1))}
+                        disabled={credPage >= Math.ceil(credentials.length / credPerPage)}
+                        className="px-3 py-1.5 bg-dark-700 hover:bg-dark-600 disabled:opacity-50 rounded text-sm"
+                      >
+                        下一页
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

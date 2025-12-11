@@ -278,18 +278,38 @@ async def credential_from_callback_url(
         except Exception as e:
             print(f"获取项目列表失败: {e}", flush=True)
         
-        # 保存凭证（关联当前用户，加密存储）
+        # 检查是否已存在相同邮箱的凭证（去重）
         from app.services.crypto import encrypt_credential
-        credential = Credential(
-            user_id=user.id,
-            name=f"OAuth - {email}",
-            api_key=encrypt_credential(access_token),
-            refresh_token=encrypt_credential(refresh_token),
-            project_id=project_id,  # 保存 project_id
-            credential_type="oauth",
-            email=email,
-            is_public=data.is_public  # 是否捐赠到公共池
+        existing_cred = await db.execute(
+            select(Credential).where(
+                Credential.user_id == user.id,
+                Credential.email == email
+            )
         )
+        existing = existing_cred.scalar_one_or_none()
+        
+        if existing:
+            # 更新现有凭证而不是新增
+            existing.api_key = encrypt_credential(access_token)
+            existing.refresh_token = encrypt_credential(refresh_token)
+            existing.project_id = project_id
+            credential = existing
+            is_new_credential = False
+            print(f"[凭证更新] 更新现有凭证: {email}", flush=True)
+        else:
+            # 创建新凭证
+            credential = Credential(
+                user_id=user.id,
+                name=f"OAuth - {email}",
+                api_key=encrypt_credential(access_token),
+                refresh_token=encrypt_credential(refresh_token),
+                project_id=project_id,
+                credential_type="oauth",
+                email=email,
+                is_public=data.is_public
+            )
+            is_new_credential = True
+            print(f"[凭证新增] 创建新凭证: {email}", flush=True)
         
         # 验证凭证是否有效（尝试调用 API）
         is_valid = True
@@ -333,14 +353,19 @@ async def credential_from_callback_url(
         credential.model_tier = detected_tier
         credential.is_active = is_valid  # 无效凭证自动禁用
         
-        db.add(credential)
+        # 只有新凭证才添加到数据库
+        if is_new_credential:
+            db.add(credential)
         
-        # 奖励用户额度（如果捐赠到公共池且凭证有效）
+        # 奖励用户额度（只有新凭证、捐赠到公共池且凭证有效才奖励）
         reward_quota = 0
-        if data.is_public and is_valid:
-            reward_quota = settings.credential_reward_quota
+        if is_new_credential and data.is_public and is_valid:
+            # 根据凭证等级细分奖励
+            reward_quota = settings.credential_reward_quota_30 if detected_tier == "3" else settings.credential_reward_quota_25
             user.daily_quota += reward_quota
-            print(f"[凭证奖励] 用户 {user.username} 获得 {reward_quota} 额度奖励", flush=True)
+            print(f"[凭证奖励] 用户 {user.username} 获得 {reward_quota} 额度奖励 (等级: {detected_tier})", flush=True)
+        elif not is_new_credential:
+            print(f"[凭证更新] 已存在凭证，不重复奖励额度", flush=True)
         
         await db.commit()
         
@@ -350,7 +375,9 @@ async def credential_from_callback_url(
             await notify_credential_update()
         
         # 构建返回消息
-        msg_parts = ["凭证获取成功"]
+        msg_parts = ["凭证更新成功" if not is_new_credential else "凭证获取成功"]
+        if not is_new_credential:
+            msg_parts.append("（已存在相同邮箱凭证，已更新token）")
         if not is_valid:
             msg_parts.append("⚠️ 凭证验证失败，已禁用")
         else:
@@ -473,18 +500,38 @@ async def credential_from_callback_url_discord(
         except Exception as e:
             print(f"[Discord OAuth] 获取项目失败: {e}", flush=True)
         
-        # 保存凭证
+        # 检查是否已存在相同邮箱的凭证（去重）
         from app.services.crypto import encrypt_credential
-        credential = Credential(
-            user_id=user.id,
-            name=f"Discord - {email}",
-            api_key=encrypt_credential(access_token),
-            refresh_token=encrypt_credential(refresh_token),
-            project_id=project_id,
-            credential_type="oauth",
-            email=email,
-            is_public=data.is_public
+        existing_cred = await db.execute(
+            select(Credential).where(
+                Credential.user_id == user.id,
+                Credential.email == email
+            )
         )
+        existing = existing_cred.scalar_one_or_none()
+        
+        if existing:
+            # 更新现有凭证
+            existing.api_key = encrypt_credential(access_token)
+            existing.refresh_token = encrypt_credential(refresh_token)
+            existing.project_id = project_id
+            credential = existing
+            is_new_credential = False
+            print(f"[Discord OAuth] 更新现有凭证: {email}", flush=True)
+        else:
+            # 创建新凭证
+            credential = Credential(
+                user_id=user.id,
+                name=f"Discord - {email}",
+                api_key=encrypt_credential(access_token),
+                refresh_token=encrypt_credential(refresh_token),
+                project_id=project_id,
+                credential_type="oauth",
+                email=email,
+                is_public=data.is_public
+            )
+            is_new_credential = True
+            print(f"[Discord OAuth] 创建新凭证: {email}", flush=True)
         
         # 验证凭证
         is_valid = True
@@ -513,15 +560,26 @@ async def credential_from_callback_url_discord(
         
         credential.model_tier = detected_tier
         credential.is_active = is_valid
-        db.add(credential)
         
-        # 奖励额度
+        # 只有新凭证才添加到数据库
+        if is_new_credential:
+            db.add(credential)
+        
+        # 奖励额度（只有新凭证才奖励）
         reward_quota = 0
-        if data.is_public and is_valid:
-            reward_quota = settings.credential_reward_quota
+        if is_new_credential and data.is_public and is_valid:
+            reward_quota = settings.credential_reward_quota_30 if detected_tier == "3" else settings.credential_reward_quota_25
             user.daily_quota += reward_quota
+            print(f"[Discord OAuth] 用户 {user.username} 获得 {reward_quota} 额度奖励", flush=True)
         
         await db.commit()
+        
+        msg = "凭证更新成功" if not is_new_credential else "凭证添加成功"
+        if not is_new_credential:
+            msg += "（已存在相同邮箱凭证，已更新token）"
+        msg += f" 等级: {detected_tier}"
+        if reward_quota:
+            msg += f" 🎉 奖励 +{reward_quota} 额度"
         
         return {
             "success": True,
@@ -529,7 +587,7 @@ async def credential_from_callback_url_discord(
             "is_valid": is_valid,
             "model_tier": detected_tier,
             "reward_quota": reward_quota,
-            "message": f"凭证添加成功！等级: {detected_tier}" + (f" 🎉 奖励 +{reward_quota} 额度" if reward_quota else "")
+            "message": msg
         }
     
     except HTTPException:

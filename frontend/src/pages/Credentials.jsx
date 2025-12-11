@@ -62,7 +62,8 @@ export default function Credentials() {
       formData.append('is_public', uploadPublic)
       
       const res = await api.post('/api/auth/credentials/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 600000 // 10分钟超时，大批量上传需要更长时间
       })
       setMessage({ 
         type: 'success', 
@@ -263,9 +264,9 @@ export default function Credentials() {
                   <div>
                     <div className="text-purple-400 font-medium flex items-center gap-2">
                       <Gift size={16} />
-                      捐赠到公共池
+                      上传到公共池
                     </div>
-                    <div className="text-xs text-purple-300/70">捐赠后可使用所有公共凭证</div>
+                    <div className="text-xs text-purple-300/70">上传后可使用所有公共凭证</div>
                   </div>
                 </label>
               )}
@@ -329,14 +330,14 @@ export default function Credentials() {
                       
                       {/* 状态标签行 */}
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        {/* 启用状态 - 绿色实心 */}
+                        {/* 启用状态 - 绿色实心，失效用红色 */}
                         {cred.is_active ? (
                           <span className="text-xs px-2.5 py-1 bg-green-600 text-white rounded font-medium">
-                            已启用
+                            有效
                           </span>
                         ) : (
                           <span className="text-xs px-2.5 py-1 bg-red-600 text-white rounded font-medium">
-                            已禁用
+                            ❌ 已失效
                           </span>
                         )}
                         
@@ -361,7 +362,7 @@ export default function Credentials() {
                         {/* 捐赠状态 - 强制捐赠时隐藏 */}
                         {cred.is_public && !forceDonate && (
                           <span className="text-xs px-2.5 py-1 border border-purple-500 text-purple-400 rounded font-medium">
-                            已捐赠
+                            已公开
                           </span>
                         )}
                       </div>
@@ -424,7 +425,7 @@ export default function Credentials() {
                         <button
                           onClick={() => togglePublic(cred.id, cred.is_public)}
                           disabled={!cred.is_public && !cred.is_active}
-                          title={!cred.is_public && !cred.is_active ? '请先检测凭证有效后再捐赠' : ''}
+                          title={!cred.is_public && !cred.is_active ? '请先检测凭证有效后再设为公开' : ''}
                           className={`px-3 py-1.5 rounded text-xs font-medium ${
                             cred.is_public 
                               ? 'bg-gray-600 hover:bg-gray-500 text-white' 
@@ -433,7 +434,7 @@ export default function Credentials() {
                                 : 'bg-purple-600 hover:bg-purple-500 text-white'
                           }`}
                         >
-                          {cred.is_public ? '取消捐赠' : '捐赠'}
+                          {cred.is_public ? '取消公开' : '设为公开'}
                         </button>
                       )}
                       
