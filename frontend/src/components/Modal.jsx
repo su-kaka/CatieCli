@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * 通用模态框组件
@@ -162,8 +162,6 @@ export function AlertModal({ isOpen, onClose, title, message, type = 'info' }) {
 /**
  * 配额设置弹窗（支持按模型分类）
  */
-import { useEffect as useEffectQuota, useState } from 'react'
-
 export function QuotaModal({ isOpen, onClose, onSubmit, title, defaultValues = {} }) {
   const [values, setValues] = useState({
     daily_quota: defaultValues.daily_quota || 0,
@@ -172,7 +170,7 @@ export function QuotaModal({ isOpen, onClose, onSubmit, title, defaultValues = {
     quota_30pro: defaultValues.quota_30pro || 0
   })
 
-  useEffectQuota(() => {
+  useEffect(() => {
     if (isOpen) {
       setValues({
         daily_quota: defaultValues.daily_quota || 0,
