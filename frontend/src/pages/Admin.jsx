@@ -42,6 +42,7 @@ export default function Admin() {
   const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '', type: 'info' })
   const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', onConfirm: null, danger: false })
   const [inputModal, setInputModal] = useState({ open: false, title: '', label: '', defaultValue: '', onSubmit: null })
+  const [quotaModal, setQuotaModal] = useState({ open: false, userId: null, defaultValues: {} })
 
   const showAlert = (title, message, type = 'info') => setAlertModal({ open: true, title, message, type })
   const showConfirm = (title, message, onConfirm, danger = false) => setConfirmModal({ open: true, title, message, onConfirm, danger })
@@ -98,18 +99,27 @@ export default function Admin() {
     }
   }
 
-  const updateUserQuota = (userId, quota) => {
-    showInput('设置配额', '每日请求配额（次/天）', quota, async (newQuota) => {
-      if (newQuota && !isNaN(newQuota)) {
-        try {
-          await api.put(`/api/admin/users/${userId}`, { daily_quota: parseInt(newQuota) })
-          fetchData()
-          showAlert('成功', '配额已更新', 'success')
-        } catch (err) {
-          showAlert('操作失败', '配额更新失败', 'error')
-        }
+  const updateUserQuota = (userId, user) => {
+    setQuotaModal({
+      open: true,
+      userId,
+      defaultValues: {
+        daily_quota: user.daily_quota || 0,
+        quota_flash: user.quota_flash || 0,
+        quota_25pro: user.quota_25pro || 0,
+        quota_30pro: user.quota_30pro || 0
       }
     })
+  }
+
+  const handleQuotaSubmit = async (values) => {
+    try {
+      await api.put(`/api/admin/users/${quotaModal.userId}`, values)
+      fetchData()
+      showAlert('成功', '配额已更新', 'success')
+    } catch (err) {
+      showAlert('操作失败', '配额更新失败', 'error')
+    }
   }
 
   const deleteUser = (userId) => {
@@ -429,7 +439,7 @@ export default function Admin() {
                         </td>
                         <td>
                           <button
-                            onClick={() => updateUserQuota(u.id, u.daily_quota)}
+                            onClick={() => updateUserQuota(u.id, u)}
                             className="text-purple-400 hover:underline"
                           >
                             {u.daily_quota}
@@ -852,6 +862,13 @@ export default function Admin() {
         label={inputModal.label}
         defaultValue={inputModal.defaultValue}
         type="number"
+      />
+      <QuotaModal
+        isOpen={quotaModal.open}
+        onClose={() => setQuotaModal({ ...quotaModal, open: false })}
+        onSubmit={handleQuotaSubmit}
+        title="设置用户配额"
+        defaultValues={quotaModal.defaultValues}
       />
     </div>
   )

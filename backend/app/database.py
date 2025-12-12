@@ -42,6 +42,9 @@ async def init_db():
             "ALTER TABLE users ADD COLUMN bonus_quota INTEGER DEFAULT 0",
             "ALTER TABLE credentials ADD COLUMN client_id TEXT",
             "ALTER TABLE credentials ADD COLUMN client_secret TEXT",
+            "ALTER TABLE users ADD COLUMN quota_flash INTEGER DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN quota_25pro INTEGER DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN quota_30pro INTEGER DEFAULT 0",
         ]
         for sql in migrations:
             try:

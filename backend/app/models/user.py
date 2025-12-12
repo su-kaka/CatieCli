@@ -19,6 +19,10 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     daily_quota = Column(Integer, default=100)  # 基础每日配额（管理员设置）
     bonus_quota = Column(Integer, default=0)  # 凭证奖励配额（自动计算，凭证失效时扣除）
+    # 按模型分类的配额（0=使用系统默认，-1=无限制）
+    quota_flash = Column(Integer, default=0)   # Flash模型配额
+    quota_25pro = Column(Integer, default=0)   # 2.5 Pro模型配额
+    quota_30pro = Column(Integer, default=0)   # 3.0模型配额
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # 关系

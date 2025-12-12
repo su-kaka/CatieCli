@@ -158,3 +158,99 @@ export function AlertModal({ isOpen, onClose, title, message, type = 'info' }) {
     </Modal>
   )
 }
+
+/**
+ * 配额设置弹窗（支持按模型分类）
+ */
+import { useEffect as useEffectQuota, useState } from 'react'
+
+export function QuotaModal({ isOpen, onClose, onSubmit, title, defaultValues = {} }) {
+  const [values, setValues] = useState({
+    daily_quota: defaultValues.daily_quota || 0,
+    quota_flash: defaultValues.quota_flash || 0,
+    quota_25pro: defaultValues.quota_25pro || 0,
+    quota_30pro: defaultValues.quota_30pro || 0
+  })
+
+  useEffectQuota(() => {
+    if (isOpen) {
+      setValues({
+        daily_quota: defaultValues.daily_quota || 0,
+        quota_flash: defaultValues.quota_flash || 0,
+        quota_25pro: defaultValues.quota_25pro || 0,
+        quota_30pro: defaultValues.quota_30pro || 0
+      })
+    }
+  }, [isOpen, defaultValues])
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSubmit(values)
+    onClose()
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={title}>
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-gray-400 text-sm mb-1">总配额（次/天）</label>
+            <input
+              type="number"
+              value={values.daily_quota}
+              onChange={(e) => setValues({ ...values, daily_quota: parseInt(e.target.value) || 0 })}
+              className="w-full px-4 py-2 bg-dark-900 border border-dark-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+            />
+          </div>
+          <div className="border-t border-dark-600 pt-4">
+            <p className="text-gray-400 text-sm mb-3">按模型配额（0=使用系统默认）</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-cyan-400 text-xs mb-1">Flash</label>
+                <input
+                  type="number"
+                  value={values.quota_flash}
+                  onChange={(e) => setValues({ ...values, quota_flash: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 bg-dark-900 border border-cyan-700/50 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-orange-400 text-xs mb-1">2.5 Pro</label>
+                <input
+                  type="number"
+                  value={values.quota_25pro}
+                  onChange={(e) => setValues({ ...values, quota_25pro: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 bg-dark-900 border border-orange-700/50 rounded-lg text-white text-sm focus:border-orange-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-pink-400 text-xs mb-1">3.0</label>
+                <input
+                  type="number"
+                  value={values.quota_30pro}
+                  onChange={(e) => setValues({ ...values, quota_30pro: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 bg-dark-900 border border-pink-700/50 rounded-lg text-white text-sm focus:border-pink-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
+          >
+            取消
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
+          >
+            确定
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
